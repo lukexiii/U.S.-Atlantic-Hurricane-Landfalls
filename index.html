@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>U.S. Hurricane Landfalls</title>
+    	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.0/dist/leaflet.css"/>
+	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v7.0.0/css/all.css">
+
+    <style>
+ 	html, body, #map { width: 100%; height: 100%; margin: 0; background: #fff; }
+
+    #title-box {
+    position: absolute;
+    left: 72px;
+    top: 10px;
+    width: 500px;
+    padding: 8px 12px;
+    background: rgba(99, 158, 195, 0.9);
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+    color: whitesmoke;
+    text-align: center;
+    z-index: 800;
+    box-sizing: border-box;
+    font-family: 'Titillium Web', sans-serif;
+}
+
+#title-box h1 {
+    position: static;
+    margin: 0;
+    padding: 0;
+    background: none;
+    box-shadow: none;
+    color: whitesmoke;
+    font-size: 2em;
+}
+
+#title-box h3 {
+    position: static;
+    margin: 3px 0 0;
+    padding: 0;
+    background: none;
+    box-shadow: none;
+    color: whitesmoke;
+    font-size: 1em;
+    font-weight: normal;
+}
+
+    .legend {
+    line-height: 40px;
+    font-size: 16px;
+    width: 250px;
+    color: #333333;
+    padding: 6px 8px;
+    background: white;
+    background: rgba(255,255,255,0.9);
+    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    border-radius: 5px;
+}
+ 
+.legend i {
+    width: 20px;
+    height: 20px;
+    float: left;
+    margin-right: 8px;
+    opacity: 0.9;
+}
+ 
+.legend img {
+    width: 16px;
+    height: 16px;
+    margin-right: 3px;
+    float: left;
+}
+ 
+.legend p {
+    font-size: 14px;
+    line-height: 20px;
+    margin: 0;
+}
+
+.legend {
+
+    font-family: 'Titillium Web', sans-serif;
+
+}
+
+.hurricane-marker {
+    background: transparent;
+    border: none;
+}
+
+.marker-color-1 { color: #32a852; }
+.marker-color-2 { color: #f2e619; }
+.marker-color-3 { color: #f28c28; }
+.marker-color-4 { color: #e32636; }
+.marker-color-5 { color: #FF00CC; }
+
+    </style>
+    	<link href="https://fonts.googleapis.com/css?family=Titillium+Web" rel="stylesheet">
+	<script src="https://unpkg.com/leaflet@1.7.0/dist/leaflet.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-ajax/2.1.0/leaflet.ajax.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/1.3.4/chroma.min.js"></script>
+
+</head>
+<body>
+<div id="map"></div>
+<div id='title-box'>
+    <h1>U.S. Atlantic Hurricane Landfalls</h1>
+    <h3>1851-2026</h3>
+    </div>
+<script>
+ 
+    // Creating a map object
+var mymap = L.map('map', {
+    center: [35.100018, -81.721246], 
+    zoom: 4.5,
+    maxZoom: 9,
+    minZoom: 3,
+    detectRetina: true
+});
+
+// Adding a base map
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+	attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
+	maxZoom: 9
+    }).addTo(mymap);
+
+// Adding the hurricane GeoJSON Data
+// Null variable that will hold hurricane data
+var landfalls = null;
+
+// Adding colors
+var colors = [
+    "#32a852", // Category 1 - Green
+    "#f2e619", // Category 2 - Yellow
+    "#f28c28", // Category 3 - Orange
+    "#e32636", // Category 4 - Red
+    "#FF00CC"  // Category 5 - Pink
+];
+
+// append style classes to this page. The style classes will be used to shade the markers.
+// use a for loop to do this
+for (i = 0; i < 5; i++) {
+    $('head').append(
+        $("<style> .marker-color-" + (i + 1).toString() +
+        " { color: " + colors[i] +
+        "; font-size: 22px; text-shadow: 0 0 2.5px rgba(255, 255, 255, 0.7); } </style>")
+    );
+}
+
+// Get GeoJSON and put it on the map when it loads
+landfalls = L.geoJson.ajax("assets/landfalls.geojson",{
+ 
+  // assign a function to the onEachFeature parameter of the object
+    onEachFeature: function(feature, layer) {
+        var name = feature.properties["Column1.name"];
+        var category = feature.properties["Column1.category"];
+        var wind = feature.properties["Column1.wind"];
+        var pres = feature.properties["Column1.pres"];
+        var year = feature.properties["Column1.year"];
+
+        layer.bindTooltip(
+        "<b>" + name + "</b><br>Category: " + category
+        );
+
+        layer.bindPopup(
+            "<b></b> " + name +
+            "<br><b>Category:</b> " + category +
+            "<br><b>Wind Speed:</b> " + wind + " mph" +
+            "<br><b>Pressure:</b> " + pres + " mbar" +
+            "<br><b>Year:</b> " + year
+        );
+    },
+    pointToLayer: function(feature, latlng) {
+        var category = feature.properties["Column1.category"];
+
+        return L.marker(latlng, {
+            icon: L.divIcon({
+                className: 'hurricane-marker',
+                html: '<i class="fa-solid fa-hurricane marker-color-' + category + '"></i>',
+                iconSize: [24, 24],
+                iconAnchor: [12, 12]
+            })
+        });
+    },
+    attribution: 'Hurricane Data: NOAA HURDAT2 | Map Author: Luke Phelps'
+}).addTo(mymap);
+
+
+//Set function for color ramp
+colors = chroma.scale('Blues').colors(5);
+ 
+// this function manually defines my choropleth classification system
+
+var choroplethColors = chroma.scale('PuBu').padding([0.25, 0]).colors(5);
+
+function setColor(count) {
+    var id = 0;
+    if (count > 67) { id = 4; }        // Class 5: 128 (Florida)
+    else if (count > 33) { id = 3; }   // Class 4: 59 - 67 (TX, LA, NC)
+    else if (count > 15) { id = 2; }   // Class 3: 22 - 33 (SC, AL, GA, MS)
+    else if (count > 4) { id = 1; }    // Class 2: 10 - 15 (NY, MA, CT, RI)
+    else { id = 0; }                   // Class 1: 0 - 4 (NJ, ME, and states with 0)
+    return choroplethColors[id];
+}
+
+var hurricaneCounts = {};
+
+// Load the CSV first and build a lookup object by State name
+$.ajax({
+    type: "GET",
+    url: "assets/counts.csv",
+    dataType: "text",
+    success: function(csvText) {
+        var lines = csvText.trim().split(/\r?\n/);
+        
+        // Start at i = 1 to skip the header row ("State,count")
+        for (var i = 1; i < lines.length; i++) {
+            var cols = lines[i].split(",");
+            var stateName = cols[0].trim();
+            var count = parseInt(cols[1].trim(), 10);
+            hurricaneCounts[stateName] = count;
+        }
+
+        // load states.json and style each polygon using the lookup
+        L.geoJson.ajax("assets/states.json", {
+            style: function(feature) {
+                // Check your states.json property name (usually "name" or "NAME")
+                var stateName = feature.properties.name || feature.properties.NAME;
+                var count = hurricaneCounts[stateName] || 0;
+
+                return {
+                    fillColor: setColor(count),
+                    fillOpacity: 0.6,
+                    weight: 2,
+                    opacity: 1,
+                    color: '#b4b4b4',
+                    dashArray: '4'
+                };
+            }
+        }).addTo(mymap);
+    }
+});
+
+
+//Create a Leaflet Control Object for Legend
+var legend = L.control({position: 'topright'});
+ 
+//Function that runs when legend is added to map
+legend.onAdd = function () {
+ 
+    // Create Div Element and Populate it with HTML
+    var div = L.DomUtil.create('div', 'legend');
+    //this line creates a title for the choropleth part of the legend
+    div.innerHTML += '<b>Hurricane Landfalls per State</b><br />';
+    //notice the class breaks entered at the end of the next 5 lines
+    //the colors specify the shade of purple that we used to do the polygon shading
+    div.innerHTML += '<i style="background: ' + colors[4] + '; opacity: 0.5"></i><p>128</p>';
+    div.innerHTML += '<i style="background: ' + colors[3] + '; opacity: 0.5"></i><p>59-67</p>';
+    div.innerHTML += '<i style="background: ' + colors[2] + '; opacity: 0.5"></i><p>22-33</p>';
+    div.innerHTML += '<i style="background: ' + colors[1] + '; opacity: 0.5"></i><p>10-15</p>';
+    div.innerHTML += '<i style="background: ' + colors[0] + '; opacity: 0.5"></i><p>2-4</p>';
+    //this line provides the legend title for the airbnb colored symbols
+    div.innerHTML += '<hr><b>Hurricane Category<b><br />';
+    //the next 3 lines call the airbnb icon along with its proper color
+    //notice the names of the Airbnb property types listed within the <p> tags at the end of the lines
+    div.innerHTML += '<i class="fa-solid fa-hurricane marker-color-1"></i><p>Category 1: 74-95mph</p>';
+    div.innerHTML += '<i class="fa-solid fa-hurricane marker-color-2"></i><p>Category 2: 96-110mph</p>';
+    div.innerHTML += '<i class="fa-solid fa-hurricane marker-color-3"></i><p>Category 3: 111-129</p>';
+    div.innerHTML += '<i class="fa-solid fa-hurricane marker-color-4"></i><p>Category 4: 130-156</p>';
+    div.innerHTML += '<i class="fa-solid fa-hurricane marker-color-5"></i><p>Category 5: 157+</p>';
+    // Return the Legend div containing the HTML content
+    return div;
+};
+ 
+//Add legend to map
+legend.addTo(mymap);
+
+L.control.scale({position: 'bottomleft'}).addTo(mymap);
+
+
+</script>
+</body>
+</html>
